@@ -28,7 +28,9 @@
 
 ---
 
-쿠버네티스 자동 설치 도구들로 여러 개가 있는데 나는 그 중 `Ansible` 이란 오픈소스를 이용했다.
+쿠버네티스 자동 설치 도구들로 여러 개가 있는데 나는 그 중 `kubespray`를 이용했다. 
+
+kubespray는 `Ansible` 을 이용해 k8s 클러스터를 설치한다.
 
 물론입니다. 지금까지 **Kubespray를 사용해 쿠버네티스 클러스터를 구축한 전체 과정**을 블로그 포스팅용으로 깔끔하게 정리해드릴게요. 초심자 기준으로 단계별 설명과 함께 각 명령어를 포함했습니다.
 
@@ -123,6 +125,13 @@ ssh-keygen -t rsa  # (없으면 생성)
 ssh-copy-id ubuntu@10.0.10.140
 ssh-copy-id ubuntu@10.0.10.89
 ```
+
+**ubespray는 containerd나 crio 같은 컨테이너 런타임과 통신하기 위해 crictl 명령어를 사용**
+
+VERSION="v1.28.0"
+curl -LO https://github.com/kubernetes-sigs/cri-tools/releases/download/${VERSION}/crictl-${VERSION}-linux-amd64.tar.gz
+sudo tar -C /usr/local/bin -xzvf crictl-${VERSION}-linux-amd64.tar.gz
+rm crictl-${VERSION}-linux-amd64.tar.gz
 
 ---
 
