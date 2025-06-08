@@ -122,16 +122,19 @@ all:
 
 ```bash
 ssh-keygen -t rsa  # (없으면 생성)
+ssh-copy-id ubuntu@10.0.10.172
 ssh-copy-id ubuntu@10.0.10.140
 ssh-copy-id ubuntu@10.0.10.89
 ```
 
 **ubespray는 containerd나 crio 같은 컨테이너 런타임과 통신하기 위해 crictl 명령어를 사용**
 
+```bash
 VERSION="v1.28.0"
 curl -LO https://github.com/kubernetes-sigs/cri-tools/releases/download/${VERSION}/crictl-${VERSION}-linux-amd64.tar.gz
 sudo tar -C /usr/local/bin -xzvf crictl-${VERSION}-linux-amd64.tar.gz
 rm crictl-${VERSION}-linux-amd64.tar.gz
+```
 
 ---
 
@@ -139,6 +142,12 @@ rm crictl-${VERSION}-linux-amd64.tar.gz
 
 ```bash
 ansible-playbook -i inventory/mycluster/hosts.yaml --become --become-user=root cluster.yml
+```
+
+```bash
+mkdir -p ~/.kube
+sudo cp -i /etc/kubernetes/admin.conf ~/.kube/config
+sudo chown $(id -u):$(id -g) ~/.kube/config
 ```
 
 ---
@@ -169,70 +178,6 @@ kubectl get svc nginx
 
 ```bash
 curl http://<워커노드 IP>:<할당된 NodePort>
-```
-
----
-
-## 7️⃣ etcd 문제 해결 (선택적)
-
-> Kubespray 설치 후 `etcd` 서비스가 수동 구성된 경우
-
-### etcd 환경 설정 (`/etc/etcd.env`)
-
-```bash
-ETCD_NAME=k8s-controller
-ETCD_DATA_DIR=/var/lib/etcd
-ETCD_INITIAL_CLUSTER=k8s-controller=https://10.0.10.172:2380
-ETCD_INITIAL_CLUSTER_STATE=new
-ETCD_LISTEN_PEER_URLS=https://10.0.10.172:2380
-ETCD_INITIAL_ADVERTISE_PEER_URLS=https://10.0.10.172:2380
-ETCD_ADVERTISE_CLIENT_URLS=https://10.0.10.172:2379
-ETCD_LISTEN_CLIENT_URLS=https://10.0.10.172:2379,https://127.0.0.1:2379
-ETCD_CLIENT_CERT_AUTH=true
-ETCD_TRUSTED_CA_FILE=/etc/ssl/etcd/ssl/ca.pem
-ETCD_CERT_FILE=/etc/ssl/etcd/ssl/member-k8s-controller.pem
-ETCD_KEY_FILE=/etc/ssl/etcd/ssl/member-k8s-controller-key.pem
-ETCD_PEER_CLIENT_CERT_AUTH=true
-ETCD_PEER_TRUSTED_CA_FILE=/etc/ssl/etcd/ssl/ca.pem
-ETCD_PEER_CERT_FILE=/etc/ssl/etcd/ssl/member-k8s-controller.pem
-ETCD_PEER_KEY_FILE=/etc/ssl/etcd/ssl/member-k8s-controller-key.pem
-```
-
-### systemd 서비스 파일 (`/etc/systemd/system/etcd.service`)
-
-```ini
-[Unit]
-Description=etcd
-After=network.target
-
-[Service]
-Type=notify
-User=root
-EnvironmentFile=/etc/etcd.env
-ExecStart=/usr/local/bin/etcd
-NotifyAccess=all
-Restart=always
-RestartSec=10s
-LimitNOFILE=40000
-
-[Install]
-WantedBy=multi-user.target
-```
-
-### 적용 및 실행
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart etcd
-sudo systemctl status etcd
-```
-
-> 에러 메시지: `bind: address already in use` 발생 시 → 기존 etcd 프로세스 종료
-
-```bash
-sudo lsof -i :2380
-sudo pkill -f etcd
-sudo systemctl restart etcd
 ```
 
 ---
